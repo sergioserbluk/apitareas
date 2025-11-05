@@ -1,6 +1,6 @@
 # Nivel 4 — Material complementario práctico (adaptado a esta API)
 
-Este documento es un complemento práctico al material teórico del PDF que proporcionaste. Está escrito específicamente para la API que tienes en este repositorio (archivos: `app.py`, `auth.py`, `routes.py`, `models.py`, `seed.py`, `htmlpruebacors.html`, `utils.py`). Contiene teoría breve, arquitectura, pasos detallados "manos a la obra", ejemplos de requests (PowerShell y curl), ejercicios prácticos y una sección de resolución de problemas (incluye lo que ya corregimos sobre Flask‑RESTX).
+Este documento es un complemento práctico al material teórico del PDF. Está escrito específicamente para la API que tienes en este repositorio (archivos: `app.py`, `auth.py`, `routes.py`, `models.py`, `seed.py`, `htmlpruebacors.html`, `utils.py`). Contiene teoría breve, arquitectura, pasos detallados "manos a la obra", ejemplos de requests (PowerShell y curl), ejercicios prácticos.
 
 ---
 
@@ -204,39 +204,3 @@ Pasos:
 3. Ejecutar `pytest -q`.
 
 Criterio: tests básicos pasan (registro -> login -> crear tarea -> listar -> actualizar -> borrar).
-
-## 7. Troubleshooting (problemas vistos y soluciones aplicadas)
-
-- Problema: `KeyError: 'view_class'` al arrancar con `flask-restx`.
-  - Causa: mezclar registro directo de rutas en `Api(app)` y `Namespace` con definiciones inconsistentes, o doble registro de la misma ruta/endpoint.
-  - Solución aplicada: registrar `Api` correctamente y usar `api.add_namespace(namespace, path='/api/v1/...')`. Evitar usar `Blueprint` junto con `Namespace` si no es necesario.
-
-- Problema: Swagger 404 en `/apidocs/`.
-  - Causa frecuente: `Api` no inicializada con la app o `doc` configurado en otra ruta, o `prefix`/`path` que cambia la URL real.
-  - Solución aplicada: asegurarse de inicializar `Api(app, doc='/swagger')` o `api.init_app(app)` y comprobar el prefijo global. En este proyecto configuramos Swagger en `/swagger`. Si accedes a `/apidocs` y obtienes 404, prueba `/swagger`.
-
-- Problema: `return` fuera de función / errores de indentación.
-  - Causa: restos de código duplicado o conversiones incompletas de Blueprints a Namespaces.
-  - Solución: limpiar `auth.py` y `routes.py`, asegurando que todos los endpoints estén dentro de `Resource` y sus métodos.
-
-## 8. Checklist de entrega (rápido)
-
-- [ ] Código funcionando: `python app.py` sin excepciones.
-- [ ] Documentación Swagger accesible en `/swagger` (o ruta que configures).
-- [ ] Registro y login funcionan (puedes obtener token y usarlo en endpoints protegidos).
-- [ ] Seed crea datos de ejemplo y CRUD funciona.
-- [ ] Tests mínimos (opcional, recomendado).
-
-## 9. Recursos y siguientes pasos que puedo crear por ti
-
-Puedo generar automáticamente en el repo cualquiera de los siguientes artefactos:
-
-- `tests/` con fixtures y 4–6 tests básicos (registro/login + CRUD).
-- `html_demo.html` que implemente un pequeño frontend: registro/login (guarda token en localStorage) y UI para listar/crear/editar/borrar tareas.
-- `run.ps1` y `seed.ps1` para Windows PowerShell que automatizan crear el entorno, instalar deps, seed y arrancar la app.
-
-Dime cuál de estos quieres que genere y lo añado directamente al repositorio.
-
----
-
-Si quieres que adapte todavía más el contenido del PDF (por ejemplo, mantener exactamente el orden y las secciones del PDF), dime las secciones concretas y las adaptaré al código de este repo. También puedo añadir diagramas simples (ASCII o referencias) o un diagrama mermaid si prefieres.
