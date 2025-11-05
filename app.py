@@ -1,80 +1,93 @@
-from flask import request
+  # punto de entrada
+import os
+import json
 from flask import Flask, jsonify
-import json, os
 from flask_cors import CORS
-app = Flask(__name__)
-CORS(app) # Necesario en desarrollo si el frontend está en OTRO origen (puerto/dominio). 
-           # Sin esto, el navegador bloquea la petición por CORS (Postman no se ve afectado).
-STORAGE = "storage.json"
-global tareas
-tareas = []
-def cargar():
+from flask_restx import Api, Resource
+from dotenv import load_dotenv
+
+load_dotenv()
+
+from extensions import db, jwt
+from routes import api as tareas_api
+from auth import api as auth_api
+
+def create_app():
+    app = Flask(__name__)
+
+    # Configuración de la aplicación
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///database.db")
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "cambiar_esto")
+
+    # Inicializar extensiones
+    db.init_app(app)
+    jwt.init_app(app)
+    CORS(app)  # en prod: CORS(app, resources={r"/api/*": {"origins": "https://tu-dominio"}})
+
+    # Crear la API
+    api = Api(
+        title='API de Tareas',
+        version='1.0',
+        description='API REST de tareas con autenticación JWT',
+        doc='/swagger',
+        prefix='/api/v1',
+        authorizations={
+            'Bearer': {
+                'type': 'apiKey',
+                'in': 'header',
+                'name': 'Authorization'
+            }
+        },
+        security='Bearer'
+    )
+
+    # Registrar la API con la app
+    api.init_app(app)
+
+    # Registrar namespaces de la API
+    api.add_namespace(tareas_api, path='/tareas')
+    api.add_namespace(auth_api, path='/auth')
+
+    # Crear namespace para endpoints base
+    base_api = api.namespace('', description='Endpoints base')
     
-    if os.path.exists(STORAGE):
-        with open(STORAGE, "r", encoding="utf-8") as f:
-            tareas[:] = json.load(f)
+    @base_api.route('/')
+    class Root(Resource):
+        @base_api.doc('root')
+        def get(self):
+            """Endpoint raíz que muestra información de la API"""
+            return {"mensaje": "API de Tareas (Nivel 4) lista", "docs": "/apidocs"}
 
-def guardar():
-    with open(STORAGE, "w", encoding="utf-8") as f:
-        json.dump(tareas, f, ensure_ascii=False, indent=2)
+    @base_api.route('/tareas')
+    class PublicTasks(Resource):
+        @base_api.doc('public_tasks')
+        def get(self):
+            """Endpoint público para pruebas (CORS / HTML). Devuelve el contenido de storage.json"""
+            try:
+                with app.open_resource("storage.json") as f:
+                    data = json.load(f)
+            except Exception:
+                data = []
+            return data, 200
 
-# tareas = [
-#     {"id": 1, "titulo": "Aprender Flask", "hecha": False},
-#     {"id": 2, "titulo": "Practicar requests", "hecha": True}
-# ]
-@app.get("/")
-def home():
-    return jsonify({"mensaje": "API de Tareas – Nivel 3 lista"})
+    # Errores
+    from utils import register_error_handlers
+    register_error_handlers(app)
 
-@app.get("/tareas")
-def obtener_tareas():
-    return jsonify(tareas), 200
-
-@app.get("/tareas/<int:tid>")
-def obtener_tarea(tid):
-    tarea = next((t for t in tareas if t["id"] == tid), None)  # next busca el primer elemento que cumple la condicion
-    if not tarea:
-        return jsonify({"error": "Tarea no encontrada"}), 404
-    return jsonify(tarea), 200
-@app.post("/tareas")
-def crear_tarea():
-    data = request.get_json(silent=True) or {}
-    titulo = (data.get("titulo") or "").strip()
-    if not titulo:
-        return jsonify({"error": "El campo 'titulo' es requerido"}), 400
-
-    nuevo_id = max([t["id"] for t in tareas] + [0]) + 1
-    nueva = {"id": nuevo_id, "titulo": titulo, "hecha": bool(data.get("hecha", False))}
-    tareas.append(nueva)
-    guardar()
-    return jsonify(nueva), 201
-@app.put("/tareas/<int:tid>")
-def actualizar_tarea(tid):
-    tarea = next((t for t in tareas if t["id"] == tid), None)
-    if not tarea:
-        return jsonify({"error": "Tarea no encontrada"}), 404
-
-    data = request.get_json(silent=True) or {}
-    if "titulo" in data:
-        nuevo_titulo = (data.get("titulo") or "").strip()
-        if not nuevo_titulo:
-            return jsonify({"error": "El título no puede ser vacío"}), 400
-        tarea["titulo"] = nuevo_titulo
-    if "hecha" in data:
-        tarea["hecha"] = bool(data["hecha"])
-    guardar()
-    return jsonify(tarea), 200
-
-# Eliminar una tarea para hoy 5/11
-@app.delete("/tareas/<int:tid>")
-def borrar_tarea(tid):
-    global tareas
-    if not any(t["id"] == tid for t in tareas):
-        return jsonify({"error": "Tarea no encontrada"}), 404
-    tareas = [t for t in tareas if t["id"] != tid]
-    guardar()
-    return jsonify({"mensaje": f"Tarea {tid} eliminada"}), 200
+    return app
 
 if __name__ == "__main__":
-    cargar()
-    app.run(debug=True)
+
+    # Crear la aplicación sólo cuando se ejecuta como script para evitar import cycles
+    app = create_app()
+
+    with app.app_context():
+
+        from models import Tarea, Usuario
+
+        db.create_all()
+
+    # Disable the auto-reloader here so the process stays attached during tests
+    app.run(debug=True, use_reloader=False)
+
