@@ -30,7 +30,7 @@ def home():
 def obtener_tareas():
     return jsonify(tareas), 200
 
-@app.get("/tareas/<int:tid>")
+@app.get("/tareas/<int:tid>")#aca hemos quedado
 def obtener_tarea(tid):
     tarea = next((t for t in tareas if t["id"] == tid), None)  # next busca el primer elemento que cumple la condicion
     if not tarea:
