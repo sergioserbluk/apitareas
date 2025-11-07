@@ -1,14 +1,14 @@
  # login/registro y helpers JWT
-from flask import request
-from flask_restx import Namespace, Resource, fields
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-from extensions import db
-from models import Usuario
+from flask import request # para obtener datos de la petición HTTP
+from flask_restx import Namespace, Resource, fields # para crear namespaces y recursos de la API
+from werkzeug.security import generate_password_hash, check_password_hash # para hashear y verificar contraseñas
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity # para manejar JWT
+from extensions import db # para acceder a la base de datos
+from models import Usuario # modelo de usuario
 
-api = Namespace('auth', description='Operaciones de autenticación')
+api = Namespace('auth', description='Operaciones de autenticación') # namespace de autenticación (se usa para agrupar endpoints)
 
-# Modelos para la documentación
+# Modelos para la documentación en Swagger
 registro_model = api.model('Registro', {
     'usuario': fields.String(required=True, description='Nombre de usuario'),
     'email': fields.String(required=True, description='Correo electrónico'),
@@ -22,11 +22,11 @@ login_model = api.model('Login', {
 
 @api.route('/register')
 class Register(Resource):
-    @api.expect(registro_model)
+    @api.expect(registro_model) 
     @api.response(201, 'Usuario creado')
     @api.response(400, 'Datos inválidos')
     def post(self):
-        """Registro de usuario"""
+        """Registro de usuario""" # documentación del endpoint, se muestra en Swagger
         data = request.get_json() or {}
         usuario = data.get("usuario", "").strip()
         email = data.get("email", "").strip().lower()

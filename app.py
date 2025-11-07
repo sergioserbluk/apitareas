@@ -86,7 +86,7 @@ if __name__ == "__main__":
 
         from models import Tarea, Usuario
 
-        db.create_all()
+        db.create_all() # crea las tablas si no existen
 
     # Disable the auto-reloader here so the process stays attached during tests
     app.run(debug=True, use_reloader=False)
