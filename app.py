@@ -1,7 +1,7 @@
 from flask import request
 from flask import Flask, jsonify
 import json, os
-from flask_cors import CORS
+from flask_cors import CORS # pip install flask-cors
 app = Flask(__name__)
 CORS(app) # Necesario en desarrollo si el frontend está en OTRO origen (puerto/dominio). 
            # Sin esto, el navegador bloquea la petición por CORS (Postman no se ve afectado).
