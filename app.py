@@ -7,7 +7,6 @@ from flask_restx import Api, Resource
 from dotenv import load_dotenv
 
 load_dotenv()
-
 from extensions import db, jwt
 from routes import api as tareas_api
 from auth import api as auth_api
