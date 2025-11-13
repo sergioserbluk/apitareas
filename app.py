@@ -60,6 +60,7 @@ def create_app():
 
     @base_api.route('/tareas')
     class PublicTasks(Resource):
+        
         @base_api.doc('public_tasks')
         def get(self):
             """Endpoint público para pruebas (CORS / HTML). Devuelve el contenido de storage.json"""
