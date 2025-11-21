@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test CORS - API Tareas</title>
+</head>
+<body>
+    <h1>Test CORS API Tareas</h1>
+    
+    <div>
+        <h2>Registro</h2>
+        <button onclick="testRegister()">Test Registro</button>
+        <div id="registerResult"></div>
+    </div>
+    
+    <div>
+        <h2>Login</h2>
+        <button onclick="testLogin()">Test Login</button>
+        <div id="loginResult"></div>
+    </div>
+
+    <script>
+        async function testRegister() {
+            const randomUser = 'user' + Date.now();
+            try {
+                const response = await fetch('http://127.0.0.1:5000/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        usuario: randomUser,
+                        email: randomUser + '@test.com',
+                        password: '123456'
+                    })
+                });
+                
+                const data = await response.json();
+                document.getElementById('registerResult').innerHTML = 
+                    `<p style="color: green">✅ Registro exitoso: ${JSON.stringify(data)}</p>`;
+                    
+                // Guardar usuario para login
+                window.testUser = randomUser;
+                
+            } catch (error) {
+                document.getElementById('registerResult').innerHTML = 
+                    `<p style="color: red">❌ Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function testLogin() {
+            if (!window.testUser) {
+                document.getElementById('loginResult').innerHTML = 
+                    `<p style="color: orange">⚠️ Primero haz registro</p>`;
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://127.0.0.1:5000/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        usuario: window.testUser,
+                        password: '123456'
+                    })
+                });
+                
+                const data = await response.json();
+                document.getElementById('loginResult').innerHTML = 
+                    `<p style="color: green">✅ Login exitoso: Token recibido de ${data.access_token?.length || 0} chars</p>`;
+                    
+            } catch (error) {
+                document.getElementById('loginResult').innerHTML = 
+                    `<p style="color: red">❌ Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

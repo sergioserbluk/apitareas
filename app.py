@@ -1,7 +1,7 @@
   # punto de entrada
 import os
 import json
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_restx import Api, Resource
 from dotenv import load_dotenv
@@ -22,15 +22,21 @@ def create_app():
     # Inicializar extensiones
     db.init_app(app)
     jwt.init_app(app)
-    CORS(app)  # en prod: CORS(app, resources={r"/api/*": {"origins": "https://tu-dominio"}})
+    
+    # Configuración CORS ULTRA PERMISIVA para desarrollo
+    CORS(app, 
+         origins=["*"],  # Permitir todos los orígenes temporalmente 
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         allow_headers=["*"],
+         supports_credentials=False)  # Deshabilitar credentials temporalmente
 
     # Crear la API
     api = Api(
+        app,
         title='API de Tareas',
         version='1.0',
         description='API REST de tareas con autenticación JWT',
         doc='/swagger',
-        prefix='/api/v1',
         authorizations={
             'Bearer': {
                 'type': 'apiKey',
@@ -40,9 +46,6 @@ def create_app():
         },
         security='Bearer'
     )
-
-    # Registrar la API con la app
-    api.init_app(app)
 
     # Registrar namespaces de la API
     api.add_namespace(tareas_api, path='/tareas')
@@ -56,20 +59,18 @@ def create_app():
         @base_api.doc('root')
         def get(self):
             """Endpoint raíz que muestra información de la API"""
-            return {"mensaje": "API de Tareas (Nivel 4) lista", "docs": "/apidocs"}
-
-    @base_api.route('/tareas')
-    class PublicTasks(Resource):
-        
-        @base_api.doc('public_tasks')
+            return {"mensaje": "API de Tareas (Nivel 4) lista", "docs": "/swagger"}
+    
+    # Endpoint simple para verificar CORS
+    @base_api.route('/test')
+    class Test(Resource):
         def get(self):
-            """Endpoint público para pruebas (CORS / HTML). Devuelve el contenido de storage.json"""
-            try:
-                with app.open_resource("storage.json") as f:
-                    data = json.load(f)
-            except Exception:
-                data = []
-            return data, 200
+            """Endpoint de prueba"""
+            return {"status": "OK", "message": "Backend funcionando correctamente"}
+        
+        def post(self):
+            """Endpoint de prueba POST"""
+            return {"status": "OK", "message": "POST funcionando"}
 
     # Errores
     from utils import register_error_handlers
@@ -89,5 +90,5 @@ if __name__ == "__main__":
         db.create_all() # crea las tablas si no existen
 
     # Disable the auto-reloader here so the process stays attached during tests
-    app.run(debug=True, use_reloader=False)
+    app.run(debug=True, host='127.0.0.1', port=5001)
 

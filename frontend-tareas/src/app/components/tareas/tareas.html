@@ -1,0 +1,79 @@
+<div class="tareas-container">
+  <h1>Mis Tareas</h1>
+  
+  <!-- Formulario para nueva tarea -->
+  <mat-card class="new-task-card">
+    <mat-card-header>
+      <mat-card-title>Agregar Nueva Tarea</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form (ngSubmit)="createTarea()" #tareaForm="ngForm">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Título de la tarea</mat-label>
+          <input matInput [(ngModel)]="nuevaTarea.titulo" name="titulo" required>
+        </mat-form-field>
+        <mat-checkbox [(ngModel)]="nuevaTarea.hecha" name="hecha">
+          Marcar como completada
+        </mat-checkbox>
+        <div class="form-actions">
+          <button mat-raised-button color="primary" type="submit" [disabled]="!tareaForm.form.valid">
+            <mat-icon>add</mat-icon>
+            Agregar Tarea
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Lista de tareas -->
+  <div class="tareas-list">
+    <mat-card *ngFor="let tarea of tareas" class="tarea-card" [class.completed]="tarea.hecha">
+      <mat-card-content>
+        <div *ngIf="editingTarea?.id !== tarea.id; else editMode" class="tarea-view">
+          <div class="tarea-info">
+            <mat-checkbox 
+              [checked]="tarea.hecha" 
+              (change)="toggleTareaComplete(tarea)">
+            </mat-checkbox>
+            <span class="tarea-titulo" [class.completed-text]="tarea.hecha">
+              {{ tarea.titulo }}
+            </span>
+          </div>
+          <div class="tarea-actions">
+            <button mat-icon-button color="primary" (click)="startEdit(tarea)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="deleteTarea(tarea)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <ng-template #editMode>
+          <div class="tarea-edit">
+            <mat-form-field appearance="outline" class="edit-input">
+              <mat-label>Título</mat-label>
+              <input matInput [(ngModel)]="editingTarea!.titulo">
+            </mat-form-field>
+            <mat-checkbox [(ngModel)]="editingTarea!.hecha">
+              Completada
+            </mat-checkbox>
+            <div class="edit-actions">
+              <button mat-icon-button color="primary" (click)="saveEdit()">
+                <mat-icon>save</mat-icon>
+              </button>
+              <button mat-icon-button (click)="cancelEdit()">
+                <mat-icon>cancel</mat-icon>
+              </button>
+            </div>
+          </div>
+        </ng-template>
+      </mat-card-content>
+    </mat-card>
+
+    <div *ngIf="tareas.length === 0" class="no-tareas">
+      <mat-icon>assignment</mat-icon>
+      <p>No hay tareas aún. ¡Agrega tu primera tarea!</p>
+    </div>
+  </div>
+</div>

@@ -3,6 +3,7 @@ from flask import request # para obtener datos de la petición HTTP
 from flask_restx import Namespace, Resource, fields # para crear namespaces y recursos de la API
 from werkzeug.security import generate_password_hash, check_password_hash # para hashear y verificar contraseñas
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity # para manejar JWT
+from flask_cors import cross_origin # para CORS específico
 from extensions import db # para acceder a la base de datos
 from models import Usuario # modelo de usuario
 
@@ -10,13 +11,13 @@ api = Namespace('auth', description='Operaciones de autenticación') # namespace
 
 # Modelos para la documentación en Swagger
 registro_model = api.model('Registro', {
-    'usuario': fields.String(required=True, description='Nombre de usuario'),
+    'nombre': fields.String(required=True, description='Nombre de usuario'),
     'email': fields.String(required=True, description='Correo electrónico'),
     'password': fields.String(required=True, description='Contraseña')
 })
 
 login_model = api.model('Login', {
-    'usuario': fields.String(required=True, description='Nombre de usuario'),
+    'email': fields.String(required=True, description='Email del usuario'),
     'password': fields.String(required=True, description='Contraseña')
 })
 
@@ -25,21 +26,22 @@ class Register(Resource):
     @api.expect(registro_model) 
     @api.response(201, 'Usuario creado')
     @api.response(400, 'Datos inválidos')
+    @cross_origin(origins=['http://localhost:4200'])
     def post(self):
         """Registro de usuario""" # documentación del endpoint, se muestra en Swagger
         data = request.get_json() or {}
-        usuario = data.get("usuario", "").strip()
+        nombre = data.get("nombre", "").strip()  # Cambiado de 'usuario' a 'nombre'
         email = data.get("email", "").strip().lower()
         password = data.get("password", "")
 
-        if not usuario or not email or not password:
+        if not nombre or not email or not password:
             return {"error": "Faltan campos"}, 400
 
-        if Usuario.query.filter((Usuario.usuario==usuario)|(Usuario.email==email)).first():
+        if Usuario.query.filter((Usuario.usuario==nombre)|(Usuario.email==email)).first():
             return {"error": "Usuario o email ya existe"}, 400
 
         u = Usuario(
-            usuario=usuario,
+            usuario=nombre,  # Usar 'nombre' del frontend como 'usuario' en DB
             email=email,
             password_hash=generate_password_hash(password)
         )
@@ -55,18 +57,19 @@ class Login(Resource):
     @api.expect(login_model)
     @api.response(200, 'Login exitoso')
     @api.response(401, 'Credenciales inválidas')
+    @cross_origin(origins=['http://localhost:4200'])
     def post(self):
         """Login de usuario"""
         data = request.get_json() or {}
-        usuario = data.get("usuario", "")
+        email = data.get("email", "")  # Cambiado de 'usuario' a 'email'
         password = data.get("password", "")
 
-        u = Usuario.query.filter_by(usuario=usuario).first()
+        u = Usuario.query.filter_by(email=email).first()  # Buscar por email
         if not u or not check_password_hash(u.password_hash, password):
             return {"error": "Credenciales inválidas"}, 401
 
         token = create_access_token(identity=str(u.id))
-        return {"token": token}, 200
+        return {"access_token": token, "usuario": {"id": u.id, "usuario": u.usuario, "email": u.email}}, 200
 
 @api.route('/me')
 class UserInfo(Resource):

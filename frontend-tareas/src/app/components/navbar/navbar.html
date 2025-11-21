@@ -1,0 +1,33 @@
+<mat-toolbar color="primary">
+  <span>
+    <mat-icon>task_alt</mat-icon>
+    API Tareas
+  </span>
+  
+  <span class="spacer"></span>
+  
+  <div *ngIf="isLoggedIn(); else guestMenu" class="user-menu">
+    <span class="user-info">Hola, {{ currentUser?.usuario || 'Usuario' }}!</span>
+    <button mat-button routerLink="/tareas" routerLinkActive="active">
+      <mat-icon>list</mat-icon>
+      Mis Tareas
+    </button>
+    <button mat-button (click)="logout()">
+      <mat-icon>logout</mat-icon>
+      Cerrar Sesión
+    </button>
+  </div>
+
+  <ng-template #guestMenu>
+    <div class="guest-menu">
+      <button mat-button routerLink="/login" routerLinkActive="active">
+        <mat-icon>login</mat-icon>
+        Iniciar Sesión
+      </button>
+      <button mat-button routerLink="/registro" routerLinkActive="active">
+        <mat-icon>person_add</mat-icon>
+        Registrarse
+      </button>
+    </div>
+  </ng-template>
+</mat-toolbar>
