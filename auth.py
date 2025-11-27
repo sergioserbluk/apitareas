@@ -11,13 +11,13 @@ api = Namespace('auth', description='Operaciones de autenticación') # namespace
 
 # Modelos para la documentación en Swagger
 registro_model = api.model('Registro', {
-    'nombre': fields.String(required=True, description='Nombre de usuario'),
+    'usuario': fields.String(required=True, description='Nombre de usuario'),
     'email': fields.String(required=True, description='Correo electrónico'),
     'password': fields.String(required=True, description='Contraseña')
 })
 
 login_model = api.model('Login', {
-    'email': fields.String(required=True, description='Email del usuario'),
+    'usuario': fields.String(required=True, description='Usuario o Email'),
     'password': fields.String(required=True, description='Contraseña')
 })
 
@@ -30,18 +30,18 @@ class Register(Resource):
     def post(self):
         """Registro de usuario""" # documentación del endpoint, se muestra en Swagger
         data = request.get_json() or {}
-        nombre = data.get("nombre", "").strip()  # Cambiado de 'usuario' a 'nombre'
+        usuario = data.get("usuario", "").strip()
         email = data.get("email", "").strip().lower()
         password = data.get("password", "")
 
-        if not nombre or not email or not password:
+        if not usuario or not email or not password:
             return {"error": "Faltan campos"}, 400
 
-        if Usuario.query.filter((Usuario.usuario==nombre)|(Usuario.email==email)).first():
+        if Usuario.query.filter((Usuario.usuario==usuario)|(Usuario.email==email)).first():
             return {"error": "Usuario o email ya existe"}, 400
 
         u = Usuario(
-            usuario=nombre,  # Usar 'nombre' del frontend como 'usuario' en DB
+            usuario=usuario,
             email=email,
             password_hash=generate_password_hash(password)
         )
@@ -61,10 +61,11 @@ class Login(Resource):
     def post(self):
         """Login de usuario"""
         data = request.get_json() or {}
-        email = data.get("email", "")  # Cambiado de 'usuario' a 'email'
+        usuario_o_email = data.get("usuario", data.get("email", ""))
         password = data.get("password", "")
 
-        u = Usuario.query.filter_by(email=email).first()  # Buscar por email
+        # Buscar por usuario o por email
+        u = Usuario.query.filter((Usuario.usuario == usuario_o_email) | (Usuario.email == usuario_o_email)).first()
         if not u or not check_password_hash(u.password_hash, password):
             return {"error": "Credenciales inválidas"}, 401
 
